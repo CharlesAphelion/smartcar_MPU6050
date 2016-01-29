@@ -1,17 +1,107 @@
-Jennic platform added!
+# Smartcar MPU6050 library
+An extension of the [Smartcar shield](http://plat.is/smartcar) library that uses the MPU6050 6DOF IMU
 
-============================================================================
-Note: for details about this project, please visit: http://www.i2cdevlib.com
-============================================================================
+## Description
+This library is an extension to the Smartcar shield library, that allows the integration of the MPU6050 6DOF IMU, with the Smartcar platform. Particularly, the MPU6050 can be used instead of the default gyroscope, in order to allow the smartcar to [rotate](https://github.com/platisd/smartcar_shield/wiki/API-documentation#void-rotateint-degrees) according to the specified degrees.
 
-The I2C Device Library (i2cdevlib) is a collection of uniform and well-documented classes to provide simple and intuitive interfaces to I2C devices. Each device is built to make use of the generic "I2Cdev" class, which abstracts the I2C bit- and byte-level communication away from each specific device class, making it easy to keep the device class clean while providing a simple way to modify just one class to port the I2C communication code onto different platforms (Arduino, PIC, MSP430, Jennic, simple bit-banging, etc.). Device classes are designed to provide complete coverage of all functionality described by each device's documentation, plus any generic convenience functions that are helpful.
+The library is essentially a stripped down version of the [MPU6050](https://github.com/jrowberg/i2cdevlib/tree/master/Arduino/MPU6050) Arduino library, by Jeff Rowberg. It merely allows the user to get the angularDisplacement, since the beginning of MPU6050's operation. Essentially the sensor's heading. Calibration currently is not supported, so you should try the equivalent sketches of the original library if you need to do get those values. Furtheremore, the library by default uses the YAW value (Z axis) as the displacement, as in the Smartcar domain, we do not care about all the three axes of movement. If you need to use another axis, due to different orientation of your MPU6050, change `ypr[0]` in [/MPU6050_Sensor.cpp](/MPU6050_Sensor.cpp) to `ypr[1]` for pitch (y axis) and `ypr[2]` for roll (x axis).
 
-The code is written primarily to support the Arduino/Wiring implementation, but it may be useful in other circumstances. There are multiple I2C/TWI implementations selectable in the I2Cdev.h header file if the default Arduino "Wire.h" is not available or preferable for any reason.
+The original API has become private, for higher clarity. If you need to just use the MPU6050, without the Smartcar, please use the original library!
 
-There are examples in many of the classes that demonstrate basic usage patterns. The I2Cdev class is built to be used statically, reducing the memory requirement if you have multiple I2C devices in your project. Only one instance of the I2Cdev class is required.
+You can find various example sketches, which illustrate the usage of the MPU6050 sensor, in the [/examples](/examples) folder.
 
-Documentation for each class is created using Doxygen-style comments placed in each class definition file, based on the information available in each device's datasheet. This documentation is available in HTML format on the i2cdevlib.com website, which also holds helpful information for most of the classes present here on the repository.
+## Dependencies
+* Wire library (included with Arduino IDE)
+* [Smartcar shield](http://plat.is/smartcar) library
 
-To use the library, just place the I2Cdev .cpp/.h or .c/.h source files and any device library .cpp/.h or .c/.h source files in the same folder as your sketch (or a suitable place relative to your project build tool), and include just the device library headers that you need. Arduino users will also need to include <Wire.h> in your main sketch source file. Create a single device object (e.g. "ADXL345 accel();"), place any appropriate init function calls in your setup() routine (e.g. "accel.initialize();"), and off you go! See the example sketches inside many of the device class directories for reference.
+## API
+In order to use the library, you have to include the Smartcar_MPU6050.h file, by writing `#include <Smartcar_MPU6050.h>`. If you are using the Arduino IDE 1.6.6 or newer, you don't have to include the Smartcar.h file for the Smartcar shield library, or other dependencies related to these two libraries.
 
-Want a library for a device that isn't up on the repository? Request it, or fork the code and contribute! Better yet, send me a device on a breakout board to test the code during development. No guarantees on how fast I can get it done, but I'd love to make this the biggest consistent and well-documented I2C device library around.
+**Note:** When using the MPU6050, keep in mind that the output values are between -180 and 180, unlike the Gyroscope of Smartcar library. So, when using the MPU6050 with `Car`, `rotate(360)` will never be reached.
+
+### MPU6050_Sensor(int gyroOffset, int accelOffset, uint8_t address)
+The constructor of the MPU6050_Sensor. Use it to instantiate the MPU6050_Sensor class. The arguments are optional. Gyro offset and accelerometer offset, should be determined using the [original library](https://github.com/jrowberg/i2cdevlib/tree/master/Arduino/MPU6050). The default and most common address is `0x68`. Less often, it can also be `0x69` depending on your module. The default address, is represented by the `MPU6050_DEFAULT_ADDRESS` constant in [MPU6050_Sensor.h](MPU6050_Sensor.h).
+
+**Example**
+```arduino
+#include <Smartcar_MPU6050.h>
+
+MPU6050_Sensor mpu;
+//MPU6050_Sensor mpu(0, 1758, 0x69);
+
+void setup() {
+  // put your setup code here, to run once:
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+}
+```
+
+### boolean attach(unsigned short digitalPin)
+Always use this method in `setup()` in order to bind the MPU6050 sensor to an pin enabled with an external interrupt. You can find which ones are those for your board [here](https://www.arduino.cc/en/Reference/AttachInterrupt).
+
+If an invalid digital pin is supplied or connection to the MPU6050 fails, false will be returned. You can use this method's return value to determine if initialization was succesful.
+
+**Example**
+```arduino
+#include <Smartcar_MPU6050.h>
+
+MPU6050_Sensor mpu;
+
+void setup() {
+  mpu.attach(2); //MPU6050 attached to pin D2
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+}
+```
+
+### void update()
+Always use this method in `loop()` in order to update the measurements from the MPU6050 sensor. This method should be run as frequent as possible.
+
+**Example**
+```arduino
+#include <Smartcar_MPU6050.h>
+
+MPU6050_Sensor mpu;
+
+void setup() {
+  mpu.attach(2); //MPU6050 attached to pin D2
+}
+
+void loop() {
+  mpu.update(); //update the MPU6050 readings
+}
+```
+
+### int getAngularDisplacement()
+Use this method in order to get the angular displacement (or heading) at the specific moment. This method is inherited from the [HeadingSensor](https://github.com/platisd/smartcar_shield/blob/master/src/HeadingSensor.cpp) class of the Smartcar shield library.
+
+**Example**
+```arduino
+#include <Smartcar_MPU6050.h>
+
+MPU6050_Sensor mpu;
+
+void setup() {
+  Serial.begin(9600); //initialize serial at 9600 BAUD rate
+  mpu.attach(2); //MPU6050 attached to pin D2
+}
+
+void loop() {
+  mpu.update(); //update the MPU6050 readings
+  Serial.println(mpu.getAngularDisplacement()); //print the current displacement
+}
+```
+
+## Known issues
+* Sometimes the MPU6050 readings of `getAngularDisplacement` become random, either being totally unstable or very high (approximately -179). This tends to get corrected if the INT pin gets plugged out and in. As the issue is hard to replicate, the reasons behind it are under investigations.
+
+## Examples
+Examples can be found under the [/examples](/tree/master/examples) folder.
+* [Smartcar_MPU6050_displacement](/examples/Smartcar_MPU6050_displacement/Smartcar_MPU6050_displacement.ino)
+A sketch that illustrates how to get the angular displacement readings from the MPU6050 sensor.
+* [Smartcar_MPU6050_Car](/examples/Smartcar_MPU6050_Car/Smartcar_MPU6050_Car.ino)
+A sketch that illustrates how to integrate the MPU6050 sensor with the Car class of the Smartcar shield library. Particularly, you can use it the same way with the Gyroscope.
