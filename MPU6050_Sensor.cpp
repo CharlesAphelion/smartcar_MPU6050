@@ -124,6 +124,8 @@ void MPU6050_Sensor::update(){
 	}
 }
 
+/*
+
 boolean MPU6050_Sensor::calibrate(){
 	if (!TWCR) Wire.begin(); //if it hasn't been started (TWCR==0), start it
 	initialize();
@@ -137,7 +139,7 @@ int MPU6050_Sensor::calibrateGyroscope(){
 
 int MPU6050_Sensor::calibrateAccelerometer(){
 	return getZAccelOffset();
-}
+} */
 
 /** Power on and prepare for general usage.
  * This will activate the device and take it out of sleep mode (which must be done

@@ -442,9 +442,9 @@ class MPU6050_Sensor : public HeadingSensor{
         MPU6050_Sensor(int gyroOffset = DEFAULT_GYRO_OFFSET, int accelOffset = DEFAULT_ACCEL_OFFSET, uint8_t address = MPU6050_DEFAULT_ADDRESS);
 	boolean attach(unsigned short pin);
 	void update();
-	boolean calibrate();
+/*	boolean calibrate();
 	int calibrateGyroscope();
-	int calibrateAccelerometer();
+	int calibrateAccelerometer(); */
     private:
 	// MPU control/status vars
 	bool dmpReady;  // set true if DMP init was successful
